@@ -84,7 +84,6 @@ object ShaderHelper {
         Log.v(
             TAG, """Results of compiling source :
             $shaderCode
-            :
             ${GLES20.glGetShaderInfoLog(shaderObjectId)}
         """
         )

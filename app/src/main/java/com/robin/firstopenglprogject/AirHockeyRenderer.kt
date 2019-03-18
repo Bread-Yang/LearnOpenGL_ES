@@ -15,60 +15,67 @@ import javax.microedition.khronos.opengles.GL10
  */
 class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
 
-    private val POSITION_COMPONENT_COUNT = 2
     private val BYTES_PER_FLOAT: Int = 4
+
+    private val POSITION_COMPONENT_COUNT = 2
+    private val COLOR_COMPONENT_COUNT = 3
+    private val STRIDE = (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT
+
     private val vertexDate: FloatBuffer
 
     private var program: Int = 0
 
     // Vertices shader variables
     private val A_POSITION = "a_Position"
+    private val A_COLOR = "a_Color"
     private var aPositionLocation: Int = 0
     private val simpleVertexShaderGLSL = """
         attribute vec4 $A_POSITION;
+        attribute vec4 $A_COLOR;
+
+        varying vec4 v_Color;
 
         void main()
         {
+            v_Color = $A_COLOR;
+
             gl_Position = $A_POSITION;
             gl_PointSize = 10.0;
         }
     """
 
     // Fragment shader variables
-    private val U_COLOR = "u_Color"
-    private var uColorLocation: Int = 0
+    private val V_COLOR = "v_Color"
+    private var aColorLocation: Int = 0
     private val simpleFragmentShaderGLSL = """
         precision mediump float;
 
-        uniform vec4 $U_COLOR;
+        varying vec4 $V_COLOR;
 
         void main()
         {
-            gl_FragColor = $U_COLOR;
+            gl_FragColor = $V_COLOR;
         }
     """
 
     private val tableVerticesWithTriangles = floatArrayOf(
-        // Triangle 1
-        -0.5f, -0.5f,
-        0.5f, 0.5f,
-        -0.5f, 0.5f,
+        // Order of coordinates: X, Y, R, G, B
 
-        // Triangle 2
-        -0.5f, -0.5f,
-        0.5f, -0.5f,
-        0.5f, 0.5f,
+        // Triangle Fan
+        0f, 0f, 1f, 1f, 1f,
+        -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+        0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+        0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
+        -0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
+        -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
 
         // Line 1
-        -0.5f, 0f,
-        0.5f, 0f,
+        -0.5f, 0f, 1f, 0f, 0f,
+        0.5f, 0f, 1f, 0f, 0f,
 
         // Mallets
-        0f, -0.25f,
-        0f, 0.25f,
-
-        // Puck
-        0f, 0f
+        0f, -0.25f, 0f, 0f, 1f,
+        0f, 0.25f, 1f, 0f, 0f
     )
 
     init {
@@ -91,7 +98,7 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
 
         GLES20.glUseProgram(program)
 
-        uColorLocation = GLES20.glGetUniformLocation(program, U_COLOR)
+        aColorLocation = GLES20.glGetAttribLocation(program, A_COLOR)
         aPositionLocation = GLES20.glGetAttribLocation(program, A_POSITION)
 
         // set the position to the beginning of $vertexData
@@ -99,11 +106,17 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
         // tell OpenGL that if can find the data for a_Position in the buffer vertexData
         GLES20.glVertexAttribPointer(
             aPositionLocation, POSITION_COMPONENT_COUNT, GLES20.GL_FLOAT,
-            false, 0, vertexDate
+            false, STRIDE, vertexDate
         )
-
-        // with this final call, OpenGL now konws where th find all the data it needs.
+        // with this final call, OpenGL now knows where th find all the data it needs.
         GLES20.glEnableVertexAttribArray(aPositionLocation)
+
+        vertexDate.position(POSITION_COMPONENT_COUNT)
+        GLES20.glVertexAttribPointer(
+            aColorLocation, COLOR_COMPONENT_COUNT, GLES20.GL_FLOAT,
+            false, STRIDE, vertexDate
+        )
+        GLES20.glEnableVertexAttribArray(aColorLocation)
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -115,28 +128,18 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
         // Clear the rendering surface.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-        // update the value of u_Color in fragment shader code by calling glUniform4f().
-        GLES20.glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f)
-
         // First argument tells OpenGL we want to draw triangle. The second argument tells OpenGL to read in
         // vertices starting at the beginning of our vertex array, and the third argument tells OpenGL to read
         // in six vertices.Since there are three vertices per triangle, this call will end up drawing two triangles.
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 6)
 
         // Draw the center dividing line
-        GLES20.glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f)
         GLES20.glDrawArrays(GLES20.GL_LINES, 6, 2)
 
         // Draw the first mallet blue
-        GLES20.glUniform4f(uColorLocation, 0.0f, 0.0f, 1.0f, 1.0f)
         GLES20.glDrawArrays(GLES20.GL_POINTS, 8, 1)
 
         // Draw the second mallet red.
-        GLES20.glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f)
         GLES20.glDrawArrays(GLES20.GL_POINTS, 9, 1)
-
-        // Draw the puck
-        GLES20.glUniform4f(uColorLocation, 0.0f, 1.0f, 0.0f, 1.0f)
-        GLES20.glDrawArrays(GLES20.GL_POINTS, 10, 1)
     }
 }
