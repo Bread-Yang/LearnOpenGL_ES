@@ -3,6 +3,7 @@ package com.robin.firstopenglprogject
 import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
+import android.opengl.Matrix
 import com.robin.firstopenglprogject.util.ShaderHelper
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -21,6 +22,10 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
     private val COLOR_COMPONENT_COUNT = 3
     private val STRIDE = (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT
 
+    private val projectionMatrix = FloatArray(16)
+    private val U_MATRIX = "u_Matrix"
+    private var uMatrixLocation: Int = 0
+
     private val vertexDate: FloatBuffer
 
     private var program: Int = 0
@@ -30,6 +35,8 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
     private val A_COLOR = "a_Color"
     private var aPositionLocation: Int = 0
     private val simpleVertexShaderGLSL = """
+        uniform mat4 $U_MATRIX;
+
         attribute vec4 $A_POSITION;
         attribute vec4 $A_COLOR;
 
@@ -39,7 +46,7 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
         {
             v_Color = $A_COLOR;
 
-            gl_Position = $A_POSITION;
+            gl_Position = $U_MATRIX * $A_POSITION;
             gl_PointSize = 10.0;
         }
     """
@@ -62,20 +69,20 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
         // Order of coordinates: X, Y, R, G, B
 
         // Triangle Fan
-        0f, 0f, 1f, 1f, 1f,
-        -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-        0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-        0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
-        -0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
-        -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+        0f,    0f,   1f,   1f,   1f,
+        -0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
+        0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
+        0.5f,  0.8f, 0.7f, 0.7f, 0.7f,
+        -0.5f,  0.8f, 0.7f, 0.7f, 0.7f,
+        -0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
 
         // Line 1
         -0.5f, 0f, 1f, 0f, 0f,
         0.5f, 0f, 1f, 0f, 0f,
 
         // Mallets
-        0f, -0.25f, 0f, 0f, 1f,
-        0f, 0.25f, 1f, 0f, 0f
+        0f, -0.4f, 0f, 0f, 1f,
+        0f,  0.4f, 1f, 0f, 0f
     )
 
     init {
@@ -97,6 +104,8 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
         ShaderHelper.validateProgram(program)
 
         GLES20.glUseProgram(program)
+
+        uMatrixLocation = GLES20.glGetUniformLocation(program, U_MATRIX)
 
         aColorLocation = GLES20.glGetAttribLocation(program, A_COLOR)
         aPositionLocation = GLES20.glGetAttribLocation(program, A_POSITION)
@@ -122,11 +131,35 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         // Set the OpenGL ViewPort to fill the entire surface.
         GLES20.glViewport(0, 0, width, height)
+
+        val aspectRatio =
+            if (width > height) {
+                width.toFloat() / height.toFloat()
+            } else {
+                height.toFloat() / width.toFloat()
+            }
+
+        if (width > height) {
+            // Landscape
+            Matrix.orthoM(
+                projectionMatrix, 0, -aspectRatio, aspectRatio,
+                -1f, 1f, -1f, 1f
+            )
+        } else {
+            // Portrait or square
+            Matrix.orthoM(
+                projectionMatrix, 0, -1f, 1f,
+                -aspectRatio, aspectRatio, -1f, 1f
+            )
+        }
     }
 
     override fun onDrawFrame(gl: GL10?) {
         // Clear the rendering surface.
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+
+        // send the orthographic projection matrix to the shader
+        GLES20.glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0)
 
         // First argument tells OpenGL we want to draw triangle. The second argument tells OpenGL to read in
         // vertices starting at the beginning of our vertex array, and the third argument tells OpenGL to read
