@@ -98,4 +98,17 @@ object ShaderHelper {
 
         return shaderObjectId
     }
+
+    fun buildProgram(vertexShaderSource: String, fragmentShaderSource: String): Int {
+        // Compile the shaders.
+        val vertexShader = compileVertexShader(vertexShaderSource)
+        val fragmentShader = compileFragmentShader(fragmentShaderSource)
+
+        // Link them into a shader program.
+        val program = linkProgram(vertexShader, fragmentShader)
+
+        validateProgram(program)
+
+        return program
+    }
 }
