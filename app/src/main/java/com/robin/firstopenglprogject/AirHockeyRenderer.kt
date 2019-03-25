@@ -4,6 +4,7 @@ import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
+import com.robin.firstopenglprogject.util.MatrixHelper
 import com.robin.firstopenglprogject.util.ShaderHelper
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -25,6 +26,8 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
     private val projectionMatrix = FloatArray(16)
     private val U_MATRIX = "u_Matrix"
     private var uMatrixLocation: Int = 0
+
+    private val modelMatrix = FloatArray(16)
 
     private val vertexDate: FloatBuffer
 
@@ -66,10 +69,28 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
     """
 
     private val tableVerticesWithTriangles = floatArrayOf(
+//        // Order of coordinates: X, Y, Z, W, R, G, B
+//
+//        // Triangle Fan
+//        0f,    0f, 0f, 1.5f,   1f,   1f,   1f,
+//        -0.5f, -0.8f, 0f,   1f, 0.7f, 0.7f, 0.7f,
+//        0.5f, -0.8f, 0f,   1f, 0.7f, 0.7f, 0.7f,
+//        0.5f,  0.8f, 0f,   2f, 0.7f, 0.7f, 0.7f,
+//        -0.5f,  0.8f, 0f,   2f, 0.7f, 0.7f, 0.7f,
+//        -0.5f, -0.8f, 0f,   1f, 0.7f, 0.7f, 0.7f,
+//
+//        // Line 1
+//        -0.5f, 0f, 0f, 1.5f, 1f, 0f, 0f,
+//        0.5f, 0f, 0f, 1.5f, 1f, 0f, 0f,
+//
+//        // Mallets
+//        0f, -0.4f, 0f, 1.25f, 0f, 0f, 1f,
+//        0f,  0.4f, 0f, 1.75f, 1f, 0f, 0f
+
         // Order of coordinates: X, Y, R, G, B
 
         // Triangle Fan
-        0f,    0f,   1f,   1f,   1f,
+        0f,     0f,    1f,    1f,    1f,
         -0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
         0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
         0.5f,  0.8f, 0.7f, 0.7f, 0.7f,
@@ -132,26 +153,18 @@ class AirHockeyRenderer(val context: Context) : GLSurfaceView.Renderer {
         // Set the OpenGL ViewPort to fill the entire surface.
         GLES20.glViewport(0, 0, width, height)
 
-        val aspectRatio =
-            if (width > height) {
-                width.toFloat() / height.toFloat()
-            } else {
-                height.toFloat() / width.toFloat()
-            }
+        MatrixHelper.perspectiveM(
+            projectionMatrix, 45f,
+            width.toFloat() / height.toFloat(), 1f, 10f
+        )
 
-        if (width > height) {
-            // Landscape
-            Matrix.orthoM(
-                projectionMatrix, 0, -aspectRatio, aspectRatio,
-                -1f, 1f, -1f, 1f
-            )
-        } else {
-            // Portrait or square
-            Matrix.orthoM(
-                projectionMatrix, 0, -1f, 1f,
-                -aspectRatio, aspectRatio, -1f, 1f
-            )
-        }
+        Matrix.setIdentityM(modelMatrix, 0)
+        Matrix.translateM(modelMatrix, 0, 0f, 0f, -2.5f)
+        Matrix.rotateM(modelMatrix, 0, -60f, 1f, 0f, 0f)
+
+        val tempMatrix = FloatArray(16)
+        Matrix.multiplyMM(tempMatrix, 0, projectionMatrix, 0, modelMatrix, 0)
+        System.arraycopy(tempMatrix, 0, projectionMatrix, 0, tempMatrix.size)
     }
 
     override fun onDrawFrame(gl: GL10?) {
