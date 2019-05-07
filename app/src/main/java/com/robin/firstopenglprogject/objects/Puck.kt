@@ -5,12 +5,12 @@ import com.robin.firstopenglprogject.programs.ColorShaderProgram
 import com.robin.firstopenglprogject.util.Geometry
 
 /**
- * Created by Robin Yeung on 3/25/19.
+ * Created by Robin Yeung on 4/11/19.
  */
-class Mallet(val radius: Float, val height: Float, private val numPointsAroundMallet: Int) {
+class Puck(val radius: Float, val height: Float, val numPointsAroundPuck: Int) {
 
-    private companion object {
-        const val POSITION_COMPONENT_COUNT = 3
+    companion object {
+        private const val POSITION_COMPONENT_COUNT = 3
     }
 
     private val vertexArray: VertexArray
@@ -19,7 +19,7 @@ class Mallet(val radius: Float, val height: Float, private val numPointsAroundMa
 
     init {
         val generatedData =
-            ObjectBuilder.createMallet(Geometry.Point(0f, 0f, 0f), radius, height, numPointsAroundMallet)
+            ObjectBuilder.createPuck(Geometry.Cylinder(Geometry.Point(0f, 0f, 0f), radius, height), numPointsAroundPuck)
 
         vertexArray = VertexArray(generatedData.vertexData)
         drawList = generatedData.drawList

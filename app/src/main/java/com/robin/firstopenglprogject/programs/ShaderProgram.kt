@@ -12,15 +12,17 @@ open class ShaderProgram {
 
     protected companion object {
         // Uniform constants
-        val U_MATRIX = "u_Matrix"
-        val U_TEXTURE_UNIT = "u_TextureUnit"
+        const val U_MATRIX = "u_Matrix"
+        const val U_COLOR = "u_Color"
+        const val U_TEXTURE_UNIT = "u_TextureUnit"
 
         // Attribute constants
-        val A_POSITION = "a_Position"
-        val A_COLOR = "a_Color"
-        val A_TEXTURE_COORDINATES = "a_TextureCoordinates"
+        const val A_POSITION = "a_Position"
+        const val A_COLOR = "a_Color"
+        const val A_TEXTURE_COORDINATES = "a_TextureCoordinates"
     }
 
+    // Shader program
     protected val program: Int
 
     constructor(context: Context, vertextShaderResourceId: Int, fragmentShaderResourceId: Int) {

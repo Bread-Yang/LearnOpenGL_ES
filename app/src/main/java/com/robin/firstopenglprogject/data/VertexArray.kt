@@ -1,6 +1,6 @@
 package com.robin.firstopenglprogject.data
 
-import android.opengl.GLES20
+import android.opengl.GLES20.*
 import com.robin.firstopenglprogject.Constants.BYTES_PER_FLOAT
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -23,8 +23,11 @@ class VertexArray {
 
     fun setVertexAttribPointer(dataOffset: Int, attributeLocation: Int, componentCount: Int, stride: Int) {
         floatBuffer.position(dataOffset)
-        GLES20.glVertexAttribPointer(attributeLocation, componentCount, GLES20.GL_FLOAT, false, stride, floatBuffer)
-        GLES20.glEnableVertexAttribArray(attributeLocation)
+        glVertexAttribPointer(
+            attributeLocation, componentCount,
+            GL_FLOAT, false, stride, floatBuffer
+        )
+        glEnableVertexAttribArray(attributeLocation)
 
         floatBuffer.position(0)
     }
