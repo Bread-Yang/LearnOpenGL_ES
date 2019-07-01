@@ -8,10 +8,11 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 
-class MainActivity : AppCompatActivity() {
+class ParticlesActivity : AppCompatActivity() {
 
     private lateinit var glSurfaceView: GLSurfaceView
     private var rendererSet = false
+    private val airHockeyRenderer = ParticlesRenderer(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,7 +24,7 @@ class MainActivity : AppCompatActivity() {
             glSurfaceView.setEGLContextClientVersion(2)
 
             // Assign our renderer.
-            glSurfaceView.setRenderer(AirHockeyRenderer(this))
+            glSurfaceView.setRenderer(airHockeyRenderer)
             rendererSet = true
 
             setContentView(glSurfaceView)
